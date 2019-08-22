@@ -1,5 +1,5 @@
-from phishvizlib.helloworld import print_hello_world
+from phishvizlib.test import test
 
 
-def hello_world(event, context):
-    print_hello_world()
+def test_wrapper(event, context):
+    test()

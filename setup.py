@@ -5,7 +5,7 @@ setup(
     name='phishvizlib',
     version='0.0.1',
     packages=setuptools.find_packages(),
-    long_description=open('README.md').read()
+    long_description=open('README.md').read(), install_requires=['requests']
 )
 
 

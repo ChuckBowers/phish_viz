@@ -9,17 +9,19 @@ provider:
     - phish-viz-${opt:stage, 'dev'}
   environment:
     STAGE: ${opt:stage, 'dev'}
+    PHISH_NET_BASE_URL: https://api.phish.net/v3/
+    PHISH_NET_API_KEY: ${env:PHISH_NET_API_KEY}
 
 package:
   exclude:
     - node_modules/**
 
 functions:
-  helloworld:
-    handler: libwrapper.hello_world
+  test:
+    handler: libwrapper.test_wrapper
     events:
       - http:
-          path: model
+          path: test
           method: get
           private: true
 
