@@ -10,6 +10,12 @@
       "name": "aws",
       "runtime": "python3.7",
       "region": "us-west-2",
+      "apiKeys": [
+        "phish-viz-dev"
+      ],
+      "environment": {
+        "STAGE": "dev"
+      },
       "versionFunctions": true,
       "remoteFunctionData": null,
       "compiledCloudFormationTemplate": {
@@ -119,7 +125,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/phish-viz/dev/1563941376114-2019-07-24T04:09:36.114Z/phish-viz.zip"
+                "S3Key": "serverless/phish-viz/dev/1566441080981-2019-08-22T02:31:20.981Z/phish-viz.zip"
               },
               "FunctionName": "phish-viz-dev-helloworld",
               "Handler": "libwrapper.hello_world",
@@ -131,21 +137,188 @@
                 ]
               },
               "Runtime": "python3.7",
-              "Timeout": 6
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "STAGE": "dev"
+                }
+              }
             },
             "DependsOn": [
               "HelloworldLogGroup",
               "IamRoleLambdaExecution"
             ]
           },
-          "HelloworldLambdaVersion3XUMhzzHi1R56XiYFtHaRXGTLIAZZGiZngWBsBB95w": {
+          "HelloworldLambdaVersionYiONocZVaiz9P3NoOqfMeeLmbtdBoh90V67O01gAA": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "HelloworldLambdaFunction"
               },
-              "CodeSha256": "AhgbqqHR1lDi+Z7d4ml89peLnPP8ggGQ2dHll1ZNX5w="
+              "CodeSha256": "DE5asXSTIk+ui+3KyS+apX4J1hwEvf0sEpXt+y30HEQ="
+            }
+          },
+          "ApiGatewayRestApi": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+              "Name": "dev-phish-viz",
+              "EndpointConfiguration": {
+                "Types": [
+                  "EDGE"
+                ]
+              }
+            }
+          },
+          "ApiGatewayResourceModel": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "model",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodModelGet": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "GET",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceModel"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": true,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "HelloworldLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            }
+          },
+          "ApiGatewayDeployment1566441077269": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "StageName": "dev"
+            },
+            "DependsOn": [
+              "ApiGatewayMethodModelGet"
+            ]
+          },
+          "ApiGatewayApiKey1": {
+            "Type": "AWS::ApiGateway::ApiKey",
+            "Properties": {
+              "Enabled": true,
+              "Name": "phish-viz-dev",
+              "StageKeys": [
+                {
+                  "RestApiId": {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "StageName": "dev"
+                }
+              ]
+            },
+            "DependsOn": "ApiGatewayDeployment1566441077269"
+          },
+          "ApiGatewayUsagePlan": {
+            "Type": "AWS::ApiGateway::UsagePlan",
+            "DependsOn": "ApiGatewayDeployment1566441077269",
+            "Properties": {
+              "ApiStages": [
+                {
+                  "ApiId": {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "Stage": "dev"
+                }
+              ],
+              "Description": "Usage plan for phish-viz dev stage",
+              "UsagePlanName": "phish-viz-dev"
+            }
+          },
+          "ApiGatewayUsagePlanKey1": {
+            "Type": "AWS::ApiGateway::UsagePlanKey",
+            "Properties": {
+              "KeyId": {
+                "Ref": "ApiGatewayApiKey1"
+              },
+              "KeyType": "API_KEY",
+              "UsagePlanId": {
+                "Ref": "ApiGatewayUsagePlan"
+              }
+            }
+          },
+          "HelloworldLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "HelloworldLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
             }
           }
         },
@@ -158,7 +331,30 @@
           "HelloworldLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "HelloworldLambdaVersion3XUMhzzHi1R56XiYFtHaRXGTLIAZZGiZngWBsBB95w"
+              "Ref": "HelloworldLambdaVersionYiONocZVaiz9P3NoOqfMeeLmbtdBoh90V67O01gAA"
+            }
+          },
+          "ServiceEndpoint": {
+            "Description": "URL of the service endpoint",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  ".execute-api.",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ".",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/dev"
+                ]
+              ]
             }
           }
         }
@@ -208,7 +404,16 @@
     "functions": {
       "helloworld": {
         "handler": "libwrapper.hello_world",
-        "events": [],
+        "events": [
+          {
+            "http": {
+              "path": "model",
+              "method": "get",
+              "private": true,
+              "integration": "AWS_PROXY"
+            }
+          }
+        ],
         "name": "phish-viz-dev-helloworld",
         "package": {},
         "memory": 1024,
@@ -222,7 +427,7 @@
     "artifact": "/home/will/projects/phish_viz/serverless/.serverless/phish-viz.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/phish-viz/dev/1563941376114-2019-07-24T04:09:36.114Z",
+    "artifactDirectoryName": "serverless/phish-viz/dev/1566441080981-2019-08-22T02:31:20.981Z",
     "artifact": "phish-viz.zip"
   }
 }
