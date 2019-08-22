@@ -19,9 +19,9 @@ functions:
     handler: libwrapper.hello_world
     events:
       - http:
-        path: model
-        method: get
-        private: true
+          path: model
+          method: get
+          private: true
 
 plugins:
   - serverless-python-requirements
